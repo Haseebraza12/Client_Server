@@ -220,6 +220,7 @@
 #include <dirent.h>
 #include <time.h>
 
+#define overwrite 0
 #define PORT 8080
 #define BUFFER_SIZE 10240
 #define UPLOAD_DIR "uploaded_files"
@@ -251,7 +252,15 @@ void create_directory_for_client(const char *client_name) {
 void upload_file(const char *client_name, const char *filename, const char *file_content) {
     char filepath[BUFFER_SIZE];
     snprintf(filepath, sizeof(filepath), "%s/%s/%s", UPLOAD_DIR, client_name, filename);
+    printf(filepath, sizeof(filepath), "%s/%s/%s", UPLOAD_DIR, client_name, filename);
 
+    // Check if file already exists
+    struct stat buffer;
+    if (stat(filepath, &buffer) == 0 && overwrite==0) {
+        // File exists
+        printf("File '%s' already exists in '%s'. Choose a different name or overwrite.\n", filename, filepath);
+        return;
+    }
     FILE *file = fopen(filepath, "w");
     if (file) {
         fprintf(file, "%s", file_content);
@@ -330,15 +339,27 @@ void view_files(int new_socket, const char *client_name) {
         send(new_socket, "$FAILURE$NO_CLIENT_DATA$", strlen("$FAILURE$NO_CLIENT_DATA$"), 0);
     }
 }
+void print_json(json_t *root) {
+    // Convert JSON object to string format
+    char *json_string = json_dumps(root, JSON_INDENT(4)); // Pretty print with 4 spaces indent
 
+    if (json_string) {
+        printf("%s\n", json_string); // Print the JSON string
+        free(json_string); // Don't forget to free the allocated string
+    } else {
+        printf("Error converting JSON to string.\n");
+    }
+}
 void *handle_client(void *socket_desc) {
     int new_socket = *(int*)socket_desc;
     char buffer[BUFFER_SIZE];
     int bytes_received = recv(new_socket, buffer, sizeof(buffer), 0);
     buffer[bytes_received] = '\0';
+    
 
     json_error_t error;
     json_t *root = json_loads(buffer, 0, &error);
+    print_json(root);
     if (!root) {
         printf("Error parsing JSON: %s\n", error.text);
         close(new_socket);
@@ -349,7 +370,15 @@ void *handle_client(void *socket_desc) {
     const char *filename = json_string_value(json_object_get(root, "filename"));
     const char *action = json_string_value(json_object_get(root, "action"));
     json_t *file_content = json_object_get(root, "file_content");
-
+    printf("Client Name: %s\n", client_name ? client_name : "null");
+    printf("Filename: %s\n", filename ? filename : "null");
+    printf("Action: %s\n", action ? action : "null");
+    if (json_is_string(file_content)) {
+        const char *content_str = json_string_value(file_content);
+        printf("File Content: %s\n", content_str ? content_str : "null");
+    } else {
+        printf("File Content is not a string.\n");
+    }
     if (client_name) {
         create_directory_for_client(client_name);
 

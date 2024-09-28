@@ -161,6 +161,41 @@
 
 # if __name__ == "__main__":
 #     main()
+# def download_file(sock, filename):
+#     try:
+#         if not os.path.exists(DOWNLOAD_DIR):
+#             os.makedirs(DOWNLOAD_DIR)
+
+#         request = json.dumps({"action": "download", "filename": filename})
+#         sock.sendall(request.encode())
+
+#         json_data = sock.recv(BUFFER_SIZE).decode()
+#         file_data = json.loads(json_data)
+#         # Decode the received file content using RLE
+#         encoded_content = file_data['file_content'].strip('.txt')
+#         #decoded_content = rle_decodee(encoded_content)
+#         #encoded_content = re.sub(r'[^a-zA-Z0-9]+$', '', encoded_content)
+#         encoded_content = re.split(r'[^a-zA-Z0-9]', file_data['file_content'])[0]
+
+#         print(encoded_content)
+#         # Decode the received file content using RLE
+#         decoded_content = ''.join(rle_decodee(encoded_content))
+
+#         file_path = os.path.join(DOWNLOAD_DIR, file_data['filename'])
+
+#         with open(file_path, 'w') as file:
+#             file.write(decoded_content)
+
+#         print(f"File '{file_data['filename']}' downloaded successfully to '{file_path}'.")
+
+#     except json.JSONDecodeError as e:
+#         print(f"Failed to decode JSON: {e}")
+#     except FileNotFoundError:
+#         print(f"File '{filename}' not found.")
+#     except KeyError as e:
+#         print(f"Missing key in response data: {e}")
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
 
 
 
@@ -171,8 +206,6 @@
 import socket
 import json
 import os
-
-import re
 
 from itertools import repeat, compress, groupby
 from itertools import chain, repeat, islice
@@ -231,41 +264,6 @@ def upload_file(sock, client_name, filename):
 
     except FileNotFoundError:
         print(f"File '{filename}' not found.")
-# def download_file(sock, filename):
-#     try:
-#         if not os.path.exists(DOWNLOAD_DIR):
-#             os.makedirs(DOWNLOAD_DIR)
-
-#         request = json.dumps({"action": "download", "filename": filename})
-#         sock.sendall(request.encode())
-
-#         json_data = sock.recv(BUFFER_SIZE).decode()
-#         file_data = json.loads(json_data)
-#         # Decode the received file content using RLE
-#         encoded_content = file_data['file_content'].strip('.txt')
-#         #decoded_content = rle_decodee(encoded_content)
-#         #encoded_content = re.sub(r'[^a-zA-Z0-9]+$', '', encoded_content)
-#         encoded_content = re.split(r'[^a-zA-Z0-9]', file_data['file_content'])[0]
-
-#         print(encoded_content)
-#         # Decode the received file content using RLE
-#         decoded_content = ''.join(rle_decodee(encoded_content))
-
-#         file_path = os.path.join(DOWNLOAD_DIR, file_data['filename'])
-
-#         with open(file_path, 'w') as file:
-#             file.write(decoded_content)
-
-#         print(f"File '{file_data['filename']}' downloaded successfully to '{file_path}'.")
-
-#     except json.JSONDecodeError as e:
-#         print(f"Failed to decode JSON: {e}")
-#     except FileNotFoundError:
-#         print(f"File '{filename}' not found.")
-#     except KeyError as e:
-#         print(f"Missing key in response data: {e}")
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
 
 def download_file(sock, client_name, filename):
     try:
@@ -297,7 +295,7 @@ def download_file(sock, client_name, filename):
         if not os.path.exists('downloaded_files'):
             os.makedirs('downloaded_files')
 
-        file_path = os.path.join('downloaded_files', file_data['filename'])
+        file_path = os.path.join('downloaded_files', client_name,file_data['filename'])
 
         with open(file_path, 'w') as file:
             file.write(decoded_content)
@@ -329,21 +327,21 @@ def main():
     # Create a socket and connect to the server
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('127.0.0.1', PORT))
-
-    # Get user input
+    #while(True):
+        # Get user input
     command = input("Enter command ($upload$ filename, $download$ filename, $view$): ")
-        
+            
     if command.startswith("$upload$"):
-        _, filename = command.split()
-        upload_file(sock, client_name, filename)
+            _, filename = command.split()
+            upload_file(sock, client_name, filename)
     elif command.startswith("$download$"):
-        _, filename = command.split()
-        download_file(sock, client_name, filename)
+            _, filename = command.split()
+            download_file(sock, client_name, filename)
     elif command == "$view$":
-        view_files(sock, client_name)
+            view_files(sock, client_name)
     else:
-        print("Invalid command.")
-                  
+            print("Invalid command.")
+                       
     sock.close()
 
 
